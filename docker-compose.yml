@@ -7,8 +7,7 @@ services:
       dockerfile: Dockerfile
     command: /run/secrets/  # Path to the configuration files (stored as secrets)
     volumes:
-      - "/Users/theophilushomawoo/Documents/stage/galeo/python/MIPGenerator.py:/python/plugin.py:ro"
-      - "/Users/theophilushomawoo/Documents/stage/galeo/python/requirements.txt:/python/requirements.txt:ro"
+      - "/Users/theophilushomawoo/Documents/stage/galeo/python/OrthancGif:/python/:ro"
     ports:
       - 4242:4242
       - 8042:8042
@@ -16,10 +15,11 @@ services:
       - orthanc.json
     environment:
        ORTHANC__NAME: "orthanc"
-       ORTHANC__PYTHON_SCRIPT: "/python/plugin.py"
        VERBOSE_ENABLED: "true"
        VERBOSE_STARTUP: "true"
        ORTHANC__PYTHON_VERBOSE: "true"
+       PLUGIN__PYTHON_ENABLED: "true"
+       ORTHANC__PYTHON_SCRIPT: "/python/plugin.py"
 secrets:
   orthanc.json:
     file: orthanc.json
