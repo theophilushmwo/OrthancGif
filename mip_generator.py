@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.ndimage
-import os
-import imageio.v2 as imageio
+import imageio
 import requests
 import io
 import orthanc
@@ -14,8 +13,8 @@ class MIPGenerator:
             raise Exception('numpy_array must be 3D')
 
     def _project(self, angle: int) -> np.ndarray:
-        vol_angle = scipy.ndimage.interpolation.rotate(
-            self.numpy_array, angle=angle, reshape=False, axes=(1, 2), output=np.uint8)
+        vol_angle = scipy.ndimage.rotate(
+            self.numpy_array, angle=angle, reshape=False, axes=(1, 2))
         MIP = np.amax(vol_angle, axis=1)
         return MIP
 
@@ -31,7 +30,7 @@ class MIPGenerator:
     def create_gif(self, output, frames: int = 60, delay: float = 10) -> None:
         delay = delay/1000
         projection_list = self._create_projection_list(frames)
-        imageio.mimwrite(output, projection_list, format= '.gif', duration=delay)
+        imageio.mimwrite(output, projection_list, format='.gif', duration=delay)
 
     def flip_MIP(self, MIP: np.ndarray):
         MIP = np.flip(MIP, axis=0)
@@ -44,26 +43,30 @@ def get_nparray(series: str):
     c = np.load(io.BytesIO(x.content), allow_pickle=True)
     return c
 
+def get_param(param, default, **request):
+    try:
+        return int(request['get'][param])
+    except:
+        return default
 
 def displayGif(output, uri, **request):
     if request['method'] == 'GET':
-        """
-        series = uri.split('/')[1]
-        nparray = get_nparray(series)
-        test = MIPGenerator(nparray)
-        test.create_gif('test', '/gifs', 100, 50)
-        image = imageio.imread(f'/gifs/test.gif')
-        output.AnswerBuffer(image, 'text/plain')
-        """
-
-        numpy = get_nparray('318603c5-03e8cffc-a82b6ee1-3ccd3c1e-18d7e3bb')
-        test = MIPGenerator(numpy)
+        frames = get_param('frames', 60, **request)
+        delay = get_param('delay', 10, **request)
+        print(f'frames: {frames}, delay: {delay}')
+        series = uri.split('/')[2]
+        try:
+            np_array = get_nparray(series)
+        except:
+            output.AnswerBuffer('Did not find any series', 'text/plain')
+            return
+        test = MIPGenerator(np_array)
         memory_output = io.BytesIO()
-        test.create_gif(memory_output, 100, 50)
+        test.create_gif(memory_output, frames, delay)
         memory_output.seek(0)
         output.AnswerBuffer(memory_output.read(), 'image/gif')
     else:
         output.SendMethodNotAllowed('GET')
 
 
-orthanc.RegisterRestCallback('/series/privateTest/help', displayGif)
+orthanc.RegisterRestCallback('/series/(.*)/mip', displayGif)
