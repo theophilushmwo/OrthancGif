@@ -58,13 +58,16 @@ def displayGif(output, uri, **request):
         try:
             np_array = get_nparray(series)
         except:
-            output.AnswerBuffer('Did not find any series', 'text/plain')
+            output.AnswerBuffer('Invalid series ID', 'text/plain')
             return
-        test = MIPGenerator(np_array)
-        memory_output = io.BytesIO()
-        test.create_gif(memory_output, frames, delay)
-        memory_output.seek(0)
-        output.AnswerBuffer(memory_output.read(), 'image/gif')
+        try:
+            gifBuffer = MIPGenerator(np_array)
+            memory_output = io.BytesIO()
+            gifBuffer.create_gif(memory_output, frames, delay)
+            memory_output.seek(0)
+            output.AnswerBuffer(memory_output.read(), 'image/gif')
+        except:
+            output.AnswerBuffer('Images are not 3D', 'text/plain')
     else:
         output.SendMethodNotAllowed('GET')
 
