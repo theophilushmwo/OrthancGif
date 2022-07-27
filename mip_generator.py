@@ -5,10 +5,12 @@ import requests
 import io
 import orthanc
 
-
 class MIPGenerator:
-    def __init__(self, numpy_array: np.ndarray):
+    def __init__(self, numpy_array: np.ndarray, frames, delay, projection):
         self.numpy_array = numpy_array
+        self.frames = frames
+        self.delay = delay / 1000
+        self.projection = projection
         if len(self.numpy_array.shape) != 4:
             raise Exception('numpy_array must be 3D')
 
@@ -18,8 +20,8 @@ class MIPGenerator:
         MIP = np.amax(vol_angle, axis=1)
         return MIP
 
-    def _create_projection_list(self, frames: int = 60) -> list:
-        angles = np.linspace(0, 360, frames)
+    def _create_projection_list(self) -> list:
+        angles = np.linspace(0, self.projection, self.frames)
         projection_list = []
         for i in angles:
             MIP = self._project(i)
@@ -27,10 +29,9 @@ class MIPGenerator:
             projection_list.append(MIP)
         return projection_list
 
-    def create_gif(self, output, frames: int = 60, delay: float = 10) -> None:
-        delay = delay/1000
-        projection_list = self._create_projection_list(frames)
-        imageio.mimwrite(output, projection_list, format='.gif', duration=delay)
+    def create_gif(self, output) -> None:
+        projection_list = self._create_projection_list()
+        imageio.mimwrite(output, projection_list, format='.gif', duration=self.delay)
 
     def flip_MIP(self, MIP: np.ndarray):
         MIP = np.flip(MIP, axis=0)
@@ -49,11 +50,19 @@ def get_param(param, default, **request):
     except:
         return default
 
-def displayGif(output, uri, **request):
+def outputMip(output, uri, **request):
+    displayGif(output, uri, 360, **request)
+
+def outputAvip(output, uri, **request):
+    displayGif(output, uri, 180, **request)
+
+def outputMinip(output, uri, **request):
+    displayGif(output, uri, 60, **request)
+
+def displayGif(output, uri, projection, **request):
     if request['method'] == 'GET':
         frames = get_param('frames', 60, **request)
         delay = get_param('delay', 10, **request)
-        print(f'frames: {frames}, delay: {delay}')
         series = uri.split('/')[2]
         try:
             np_array = get_nparray(series)
@@ -61,9 +70,9 @@ def displayGif(output, uri, **request):
             output.AnswerBuffer('Invalid series ID', 'text/plain')
             return
         try:
-            gifBuffer = MIPGenerator(np_array)
+            gifBuffer = MIPGenerator(np_array, frames, delay, projection)
             memory_output = io.BytesIO()
-            gifBuffer.create_gif(memory_output, frames, delay)
+            gifBuffer.create_gif(memory_output)
             memory_output.seek(0)
             output.AnswerBuffer(memory_output.read(), 'image/gif')
         except:
@@ -72,4 +81,7 @@ def displayGif(output, uri, **request):
         output.SendMethodNotAllowed('GET')
 
 
-orthanc.RegisterRestCallback('/series/(.*)/mip', displayGif)
+orthanc.RegisterRestCallback('/series/(.*)/mip', outputMip)
+orthanc.RegisterRestCallback('/series/(.*)/avip', outputAvip)
+orthanc.RegisterRestCallback('/series/(.*)/minip', outputMinip)
+
