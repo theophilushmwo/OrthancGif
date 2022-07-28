@@ -37,6 +37,37 @@ class MIPGenerator:
         MIP = np.flip(MIP, axis=0)
         return MIP
 
+class mozaicGenerator:
+    def __init__(self, numpy_array: np.ndarray, cols: int, nb_images: int, finalWidth, finalHeight):
+        self.numpy_array = numpy_array
+        self.cols = cols
+        self.nb_images = nb_images
+        self.finalWidth = finalWidth
+        self.finalHeight = finalHeight
+        self.rows = int(self.nb_images / self.cols)
+
+    def getImages(self):
+        images = []
+        row = []
+        gap = int(len(self.numpy_array) / self.nb_images)
+        for i in range(self.nb_images):
+            row.append(self.numpy_array[i * gap])
+            if (i + 1) % self.cols == 0:
+                images.append(row)
+                row = []
+        return images
+    
+    def concatImages(self, images):
+        imagesRow = []
+        for i in range(self.rows):
+            imagesRow.append(np.concatenate(images[i], axis=1))
+        return np.concatenate(imagesRow, axis=0)
+
+    def createImage(self, output):
+        images = self.getImages()
+        image = self.concatImages(images)
+        image = scale(image, self.finalWidth, self.finalHeight)
+        imageio.mimwrite(output, image, format='.png')
 
 def get_nparray(series: str):
     x = requests.get(
@@ -50,16 +81,13 @@ def get_param(param, default, **request):
     except:
         return default
 
-def outputMip(output, uri, **request):
-    displayGif(output, uri, 360, **request)
+def scale(image, nRows, nCols):
+    nR0 = len(image)
+    nC0 = len(image[0])
+    return [[ image[int(nR0 * r / nRows)][int(nC0 * c / nCols)]  
+            for c in range(nCols)] for r in range(nRows)]
 
-def outputAvip(output, uri, **request):
-    displayGif(output, uri, 180, **request)
-
-def outputMinip(output, uri, **request):
-    displayGif(output, uri, 60, **request)
-
-def displayGif(output, uri, projection, **request):
+def displayGif(output, uri, **request):
     if request['method'] == 'GET':
         frames = get_param('frames', 60, **request)
         delay = get_param('delay', 10, **request)
@@ -70,7 +98,7 @@ def displayGif(output, uri, projection, **request):
             output.AnswerBuffer('Invalid series ID', 'text/plain')
             return
         try:
-            gifBuffer = MIPGenerator(np_array, frames, delay, projection)
+            gifBuffer = MIPGenerator(np_array, frames, delay, 360)
             memory_output = io.BytesIO()
             gifBuffer.create_gif(memory_output)
             memory_output.seek(0)
@@ -80,8 +108,29 @@ def displayGif(output, uri, projection, **request):
     else:
         output.SendMethodNotAllowed('GET')
 
+def displayMozaic(output, uri, **request):
+    if request['method'] == 'GET':
+        cols = get_param('cols', 5, **request)
+        nb_images = get_param('images', 20, **request)
+        finalWidth = get_param('width', 512, **request)
+        finalHeight = get_param('height', 512, **request)
+        series = uri.split('/')[2]
+        try:
+            np_array = get_nparray(series)
+        except:
+            output.AnswerBuffer('Invalid series ID', 'text/plain')
+            return
+        try:
+            mozaicBuffer = mozaicGenerator(np_array, cols, nb_images, finalWidth, finalHeight)
+            memory_output = io.BytesIO()
+            mozaicBuffer.createImage(memory_output)
+            memory_output.seek(0)
+            output.AnswerBuffer(memory_output.read(), 'image/png')
+        except:
+            output.AnswerBuffer('Internal server error', 'text/plain')
+    else:
+        output.SendMethodNotAllowed('GET')
 
-orthanc.RegisterRestCallback('/series/(.*)/mip', outputMip)
-orthanc.RegisterRestCallback('/series/(.*)/avip', outputAvip)
-orthanc.RegisterRestCallback('/series/(.*)/minip', outputMinip)
+orthanc.RegisterRestCallback('/series/(.*)/mozaic', displayMozaic)
+orthanc.RegisterRestCallback('/series/(.*)/mip', displayGif)
 
