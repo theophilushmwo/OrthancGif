@@ -66,8 +66,10 @@ class mozaicGenerator:
     def createImage(self, output):
         images = self.getImages()
         image = self.concatImages(images)
-        image = scale(image, self.finalWidth, self.finalHeight)
-        imageio.mimwrite(output, image, format='.png')
+        print(self.finalHeight)
+        print(self.finalWidth)
+        #image = scale(image, self.finalWidth, self.finalHeight)
+        imageio.imwrite(output, image, format='.png')
 
 def get_nparray(series: str):
     x = requests.get(
