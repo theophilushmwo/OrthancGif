@@ -59,4 +59,3 @@ def displayMosaic(output, uri, **request):
 
 orthanc.RegisterRestCallback('/series/(.*)/mosaic', displayMosaic)
 orthanc.RegisterRestCallback('/series/(.*)/mip', displayGif)
-
