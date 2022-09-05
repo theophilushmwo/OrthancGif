@@ -1,9 +1,5 @@
 import numpy as np
-import scipy.ndimage
 import imageio
-import requests
-import io
-import orthanc
 
 class MosaicGenerator:
     def __init__(self, numpy_array: np.ndarray, cols: int, nb_images: int, finalWidth, finalHeight):
@@ -34,7 +30,5 @@ class MosaicGenerator:
     def createImage(self, output):
         images = self.getImages()
         image = self.concatImages(images)
-        print(self.finalHeight)
-        print(self.finalWidth)
         image = scale(image, self.finalWidth, self.finalHeight)
         imageio.imwrite(output, image, format='.png')

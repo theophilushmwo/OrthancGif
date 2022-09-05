@@ -1,17 +1,13 @@
 import numpy as np
-import scipy.ndimage
-import imageio
-import requests
 import io
 import orthanc
 
-import MosaicGenerator from mosaic
-import MIPGenerator from mip
+from mosaic import MosaicGenerator
+from mip import MIPGenerator
 
 def get_nparray(series: str):
-    x = orthanc.RestApiGet(
-        f'/series/{series}/numpy?rescale=true')
-    c = np.load(io.BytesIO(x.content), allow_pickle=True)
+    response = orthanc.RestApiGet( f'/series/{series}/numpy?rescale=true')
+    c = np.load(io.BytesIO(response), allow_pickle=True)
     return c
 
 def get_param(param, default, **request):
@@ -31,14 +27,14 @@ def displayGif(output, uri, **request):
         frames = get_param('frames', 60, **request)
         delay = get_param('delay', 10, **request)
         series = uri.split('/')[2]
-        
+
         try:
             np_array = get_nparray(series)
-        except:
-            output.AnswerBuffer('Invalid series ID', 'text/plain')
+        except Exception as e:
+            output.AnswerBuffer(str(e), 'text/plain')
             return
 
-        if( len(self.np_array.shape) != 4) :
+        if( len(np_array.shape) != 4) :
             output.AnswerBuffer('Images are not 3D', 'text/plain')
             return
 

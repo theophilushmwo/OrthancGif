@@ -1,9 +1,6 @@
 import numpy as np
 import scipy.ndimage
 import imageio
-import requests
-import io
-import orthanc
 
 class MIPGenerator:
     def __init__(self, numpy_array: np.ndarray, frames, delay, projection):
