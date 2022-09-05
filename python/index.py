@@ -16,12 +16,6 @@ def get_param(param, default, **request):
     except:
         return default
 
-def scale(image, nRows, nCols):
-    nR0 = len(image)
-    nC0 = len(image[0])
-    return [[ image[int(nR0 * r / nRows)][int(nC0 * c / nCols)]  
-            for c in range(nCols)] for r in range(nRows)]
-
 def displayGif(output, uri, **request):
     if request['method'] == 'GET':
         frames = get_param('frames', 60, **request)
@@ -30,15 +24,9 @@ def displayGif(output, uri, **request):
 
         try:
             np_array = get_nparray(series)
-        except Exception as e:
-            output.AnswerBuffer(str(e), 'text/plain')
-            return
-
-        if( len(np_array.shape) != 4) :
-            output.AnswerBuffer('Images are not 3D', 'text/plain')
-            return
-
-        try:
+            if( len(np_array.shape) != 4) :
+                output.AnswerBuffer('Images are not 3D', 'text/plain')
+                return
             gifBuffer = MIPGenerator(np_array, frames, delay, 360)
             memory_output = io.BytesIO()
             gifBuffer.create_gif(memory_output)
@@ -56,19 +44,16 @@ def displayMosaic(output, uri, **request):
         finalWidth = get_param('width', 512, **request)
         finalHeight = get_param('height', 512, **request)
         series = uri.split('/')[2]
+
         try:
             np_array = get_nparray(series)
-        except:
-            output.AnswerBuffer('Invalid series ID', 'text/plain')
-            return
-        try:
             mosaicBuffer = MosaicGenerator(np_array, cols, nb_images, finalWidth, finalHeight)
             memory_output = io.BytesIO()
             mosaicBuffer.createImage(memory_output)
             memory_output.seek(0)
             output.AnswerBuffer(memory_output.read(), 'image/png')
-        except:
-            output.AnswerBuffer('Internal server error', 'text/plain')
+        except Exception as e:
+            output.AnswerBuffer(str(e), 'text/plain')
     else:
         output.SendMethodNotAllowed('GET')
 

@@ -1,6 +1,12 @@
 import numpy as np
 import imageio
 
+def scale(image, nRows, nCols):
+    nR0 = len(image)
+    nC0 = len(image[0])
+    return [[ image[int(nR0 * r / nRows)][int(nC0 * c / nCols)]  
+            for c in range(nCols)] for r in range(nRows)]
+
 class MosaicGenerator:
     def __init__(self, numpy_array: np.ndarray, cols: int, nb_images: int, finalWidth, finalHeight):
         self.numpy_array = numpy_array
