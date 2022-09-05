@@ -73,7 +73,7 @@ class mozaicGenerator:
 
 def get_nparray(series: str):
     x = requests.get(
-        f'https://demo.orthanc-server.com/series/{series}/numpy?rescale=true')
+        f'https://localhost:8042/series/{series}/numpy?rescale=true')
     c = np.load(io.BytesIO(x.content), allow_pickle=True)
     return c
 
