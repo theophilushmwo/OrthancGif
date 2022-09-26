@@ -1,7 +1,4 @@
 FROM osimis/orthanc
-COPY mip_generator.py /python/
+COPY python /python/
 
-RUN pip3 install imageio
-RUN pip3 install numpy
-RUN pip3 install requests
-RUN pip3 install scipy
+RUN pip3 install -r /python/requirements.txt

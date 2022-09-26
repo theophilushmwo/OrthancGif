@@ -7,6 +7,7 @@ services:
       dockerfile: Dockerfile
     #volumes:
     #  - "/Users/theophilushomawoo/Documents/stage/galeo/python/OrthancGif:/python/:ro"
+    volumes: [ "dicom_storage:/var/lib/orthanc/db:Z" ]
     ports:
       - 4242:4242
       - 8042:8042
@@ -16,4 +17,8 @@ services:
        #VERBOSE_STARTUP: "true"
        PYTHON_PLUGIN_ENABLED: "true"
        ORTHANC__PYTHON_VERBOSE: "true"
-       ORTHANC__PYTHON_SCRIPT: "/python/mip_generator.py"
+       ORTHANC__PYTHON_SCRIPT: "/python/index.py"
+       NEURO_PLUGIN_ENABLED: "true"
+
+volumes:
+  dicom_storage:
