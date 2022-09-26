@@ -18,8 +18,8 @@ def get_param(param, default, **request):
 
 def displayGif(output, uri, **request):
     if request['method'] == 'GET':
-        frames = get_param('frames', 60, **request)
-        delay = get_param('delay', 10, **request)
+        frames = get_param('frames', 30, **request)
+        delay = get_param('delay', 50, **request)
         series = uri.split('/')[2]
 
         try:
