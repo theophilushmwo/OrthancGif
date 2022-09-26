@@ -3,9 +3,6 @@ import scipy.ndimage
 import imageio
 from multiprocessing import Pool, cpu_count
 from functools import partial
-import io
-import requests
-import time
 
 class MIPGenerator:
     def __init__(self, numpy_array: np.ndarray, frames, delay, projection):
@@ -26,15 +23,26 @@ class MIPGenerator:
     def _create_projection_list(self) -> list:
         angles = np.linspace(0, self.projection, self.frames)
         nbCores = cpu_count() - 2
-        # Create a pool with the function project
         pool = Pool(nbCores)
         projection_list = pool.map(self._project, angles)
         return projection_list
 
     def create_gif(self, output) -> None:
-        print('Creating gif...')
-        timer = time.time()
         projection_list = self._create_projection_list()
-        print('Projection time: ', time.time() - timer)
         imageio.mimwrite(output, projection_list, format='.gif', duration=self.delay)
+
+if __name__ == '__main__':
+    import requests
+    import io
+    import time
+    url = 'https://demo.orthanc-server.com/series/1de00990-03680ef4-0be6bd5b-73a7d350-fb46abfa/numpy?rescale=true'
+    timer = time.time()
+    response = requests.get(url)
+    print(f'Orthanc request took {time.time() - timer} seconds')
+    content = io.BytesIO(response.content)
+    numpy_array = np.load(content, allow_pickle=True)
+    generator = MIPGenerator(numpy_array, 30, 100, 360)
+    timer = time.time()
+    generator.create_gif('test.gif')
+    print(f'GIF creation took {time.time() - timer} seconds')
 
