@@ -6,8 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - "/Users/theophilushomawoo/Documents/stage/galeo/python/OrthancGif/python:/python/:ro"
-      - "dicom_storage:/var/lib/orthanc/db:Z"
+      - "./python:/python/:ro"
+      - "dicom_orthanc_storage:/var/lib/orthanc/db:Z"
     ports:
       - 4242:4242
       - 8042:8042
@@ -21,4 +21,4 @@ services:
        NEURO_PLUGIN_ENABLED: "true"
 
 volumes:
-  dicom_storage:
+  dicom_orthanc_storage:

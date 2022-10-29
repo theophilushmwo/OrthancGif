@@ -1,14 +1,22 @@
+import logging
 import numpy as np
 import io
+import os
 import orthanc
 from mosaic import MosaicGenerator
 from mip import MIPGenerator
 
+def handle_error(error, output):
+    logging.critical(error)
+    #Load unsuported.png image
+    script_dir = os.path.dirname(__file__)
+    file_path = os.path.join(script_dir, 'unsupported.png')
+    with open(file_path, 'rb') as f:
+        output.AnswerBuffer(f.read(), 'image/png')
+
 def get_nparray(series: str):
     response = orthanc.RestApiGet( f'/series/{series}/numpy?rescale=true')
     c = np.load(io.BytesIO(response), allow_pickle=True)
-    if (response.status_code != 200):
-        raise Exception('Orthanc request failed')
     return c
 
 def get_param(param, default, **request):
@@ -34,9 +42,7 @@ def displayGif(output, uri, **request):
             memory_output.seek(0)
             output.AnswerBuffer(memory_output.read(), 'image/gif')
         except Exception as e:
-            #Load unsuported.png image
-            with open('/python/unsupported.png', 'rb') as f:
-                output.AnswerBuffer(f.read(), 'image/png')
+            handle_error(e, output)
     else:
         output.SendMethodNotAllowed('GET')
 
@@ -55,22 +61,9 @@ def displayMosaic(output, uri, **request):
             memory_output.seek(0)
             output.AnswerBuffer(memory_output.read(), 'image/png')
         except Exception as e:
-            with open('unsuported.png', 'rb') as f:
-                output.AnswerBuffer(f.read(), 'image/png')
+            handle_error(e, output)
     else:
         output.SendMethodNotAllowed('GET')
-
-def displayBugReproduction(output, uri, **request):
-    if request['method'] == 'GET':
-        try:
-            squared_list = BugReproduction().bug_reproduction()
-            output.AnswerBuffer(str(squared_list), 'text/plain')
-        except Exception as e:
-            output.AnswerBuffer(str(e), 'text/plain')
-    else:
-        output.SendMethodNotAllowed('GET')
-
-orthanc.RegisterRestCallback('/bug_test', displayBugReproduction)
 
 orthanc.RegisterRestCallback('/series/(.*)/mosaic', displayMosaic)
 orthanc.RegisterRestCallback('/series/(.*)/mip', displayGif)

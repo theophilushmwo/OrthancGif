@@ -41,23 +41,4 @@ class MIPGenerator:
         except Exception as e:
             print(e)
             raise e
-        
-
-if __name__ == '__main__':
-    import requests
-    import io
-    import time
-    import os
-
-    os.environ['NO_PROXY'] = 'localhost'
-    url = 'https://demo.orthanc-server.com/series/635faa23-fd8378ee-d03bce29-ee47c2fb-a65c5509/numpy?rescale=true'
-    timer = time.time()
-    response = requests.get(url)
-    print(f'Orthanc request took {time.time() - timer} seconds')
-    content = io.BytesIO(response.content)
-    numpy_array = np.load(content, allow_pickle=True)
-    generator = MIPGenerator(numpy_array, 15, 100, 360)
-    timer = time.time()
-    generator.create_gif('test.gif')
-    print(f'GIF creation took {time.time() - timer} seconds')
 
